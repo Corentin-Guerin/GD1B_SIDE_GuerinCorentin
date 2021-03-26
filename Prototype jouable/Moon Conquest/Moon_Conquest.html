@@ -1,0 +1,698 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8" />
+    <title>Moon Conquest</title>
+    <script type = "text/javascript" src="phaser.min.js"></script>
+    
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+
+var config = {
+    type: Phaser.AUTO,
+    width: 1280,
+    height: 720,
+    pixelArt: false,
+    backgroundColor: "#000000",
+    physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 350 },
+            debug: false
+        }
+    },
+    input : {gamepad:true},
+    scene: {
+        preload: preload,
+        create: create,
+        update: update},
+        scale: {
+        zoom:1,
+    }
+
+};
+var game = new Phaser.Game(config);
+var invincible = false ;
+var compteur = 60;
+var life = 3 ;
+var lifetext;   
+var paddle;
+var padConnected;    
+var wallsLayer;
+var cursor ;
+var cursor2 ;
+var onGround ;
+var jumpCount = 0 ;
+var particulejet; 
+var particulezaphaut ;
+var particulezapbas ; 
+var enemieplatforms ;
+var enemieground ;     
+var enemieObjects;
+var enemies;
+var gameOver;
+var shoots;
+var shoot;
+var directionbody = false ;
+var lazers;
+var lazerhaut;
+var lazerbas;
+var zapLayer;
+var zapLayerbas;
+var zapLayerhaut;
+var zapcompt = 30 ;
+var zapaleatoire = 0;
+var bullets = 0 ;
+var bullet ;
+var Moon ;
+var Vie0 ;
+var Vie1 ;
+var Vie2 ;
+var Vie3 ;
+var menu ;
+
+    
+
+function death()
+{
+    return ;
+}
+
+
+function preload ()
+{   
+    this.load.image('sky', 'assets/images/space.png');
+    this.load.image('menu','assets/images/Menu.png');
+    
+    this.load.spritesheet('Perso', 'assets/spritesheets/Perso.png', { frameWidth:34, frameHeight: 32,});
+    this.load.spritesheet('Enemie1', 'assets/spritesheets/enemie.png', { frameWidth:34, frameHeight: 32,});
+    //this.load.atlas('atlas', 'assets/spritesheets/enemie.png','assets/spritesheets/enemie.json');
+    
+    this.load.spritesheet('shoot', 'assets/tiles/shoot.png', { frameWidth:16, frameHeight: 16,});
+    this.load.spritesheet('lazer', 'assets/tiles/lazer.png', { frameWidth:16, frameHeight: 16,});
+
+    this.load.spritesheet('alarme', 'assets/tiles/alarme.png', { frameWidth:16, frameHeight: 16,});
+    this.load.spritesheet('zap', 'assets/tiles/zap.png', { frameWidth:16, frameHeight: 16,});
+
+    this.load.spritesheet('bullet', 'assets/tiles/bullets.png', { frameWidth:16, frameHeight: 16,});
+    this.load.spritesheet('moon', 'assets/tiles/moon.png', { frameWidth:128, frameHeight: 128,});
+
+    //this.load.spritesheet('enemie', 'assets/spritesheets/enemie.png', { frameWidth:32, frameHeight: 32,});
+    this.load.image('Vie0', 'assets/tiles/Vie0.png');
+    this.load.image('Vie1', 'assets/tiles/Vie1.png');
+    this.load.image('Vie2', 'assets/tiles/Vie2.png');
+    this.load.image('Vie3', 'assets/tiles/Vie3.png');
+    
+    //this.load.image('alarme','assets/tiles/alarme.png');
+    this.load.image('tiles','assets/tiles/MAP1.png');
+    this.load.tilemapTiledJSON('map','assets/tiles/mapspace.json');
+    
+    this.load.image('particlejet','assets/tiles/particlejet.png');   
+
+
+}
+
+
+function create ()
+{   
+   
+
+  
+    //this.add.image(0,10, 'sky');
+    this.add.image(1280,560, 'sky');
+    menu = this.add.image(640,360, 'menu')
+    .setDepth(3)
+    .setScrollFactor(0);
+    
+    const map = this.make.tilemap({key : 'map'});
+    const tileset = map.addTilesetImage('tilesmap','tiles');
+    
+    map.createDynamicLayer('Grounds',tileset);
+    wallsLayer = map.createDynamicLayer('Walls',tileset);
+    alarmeLayer = map.createDynamicLayer('Alarme',tileset);
+    zapLayer = map.createDynamicLayer('Zap',tileset);
+    
+    //wallsLayer.setCollisionByProperty({ collides: true });
+   wallsLayer.setCollisionByExclusion(-1,true) ;
+
+    player = this.physics.add.sprite(200, 900, 'Perso')
+      .setDrag(1000, 0)
+      .setMaxVelocity(300, 400)
+      .setSize(32, 30)
+    
+    player.setBounce(0);
+    player.setCollideWorldBounds(false);
+    
+    
+    this.cameras.main.startFollow(player);
+    this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+  
+    //text/////////
+    this.add.text(140, 1025, "  Utilise les \nFleches & Espace \npour te deplacer. ", {
+        font: "20px monospace",
+        fill: "#F0F0F0",
+        padding: { x: 20, y: 10 },
+        //backgroundColor: "#ffffff"
+      })
+    
+    this.add.text(840, 1025, "Utilise le \n bouton A \npour tirer. ", {
+        font: "20px monospace",
+        fill: "#F0F0F0",
+        padding: { x: 20, y: 10 },
+        //backgroundColor: "#ffffff"
+      })
+  
+
+
+    //Ball//////////////////
+    this.anims.create({
+        key: 'bulletanim',
+        frames: this.anims.generateFrameNumbers('bullet', { start: 0, end: 2 }),
+        frameRate: 4,
+        repeat: -1
+        
+    });
+
+        bullet1 = this.physics.add.sprite(912, 832, 'bullets');
+        bullet1.body.allowGravity = false;
+        bullet1.anims.play('bulletanim',true);
+
+        bullet2 = this.physics.add.sprite(319, 207, 'bullets');
+        bullet2.body.allowGravity = false;
+        bullet2.anims.play('bulletanim',true);
+
+        bullet3 = this.physics.add.sprite(767, 552, 'bullets');
+        bullet3.body.allowGravity = false;
+        bullet3.anims.play('bulletanim',true);
+
+    //Moon//////////////
+    
+
+        Moon = this.physics.add.sprite(2175, 134, 'moon');
+        Moon.body.allowGravity = false;
+        
+
+    //Particulejump//////////////////
+    particulejet = this.add.particles('particlejet').createEmitter({
+        x: 200,
+        y: 200,
+        quantity:15,
+        speed: { min: -100, max: 100 },
+        angle: { min: 0, max: 180 },
+        scale: { start: 0.5, end: 0 },
+        lifespan: 300,
+        gravityY: -500,
+        active: false
+    });
+    
+    
+    //alarme /////////////////////////////////
+    this.anims.create({
+        key: 'alarmeanimation',
+        frames: this.anims.generateFrameNumbers('alarme', { start: 0, end: 4 }),
+        frameRate: 8,
+        repeat: -1
+        
+    });
+    this.alarme = this.physics.add.group()
+    
+    alarmeLayer.forEachTile(tile=>{
+        if(tile.index !== -1){
+            
+            const x = tile.getCenterX()
+            const y = tile.getCenterY()
+            if (tile.properties.lampe === 'alarme'){
+                alarmeLayer = this.alarme.create(x,y, 'alarme')
+                alarmeLayer.body.allowGravity = false;
+                alarmeLayer.anims.play('alarmeanimation',true)
+            }
+            alarmeLayer.body.width = 16
+            alarmeLayer.body.height = 16
+        }
+        
+    });
+    
+    //zap////////////////////////
+    
+    this.zap = this.physics.add.group()
+    
+    this.anims.create({
+        key: 'zaphautanimation',
+        frames: this.anims.generateFrameNumbers('zap', { start: 0, end: 2 }),
+        frameRate: 3,
+        repeat: -1
+        
+    });
+    this.anims.create({
+        key: 'zapbasanimation',
+        frames: this.anims.generateFrameNumbers('zap', { start: 3, end: 5 }),
+        frameRate: 3,
+        repeat: -1
+        
+    });
+    zapLayer.forEachTile(tile=>{
+        if(tile.index !== -1){
+            
+            const x = tile.getCenterX()
+            const y = tile.getCenterY()
+            if (tile.properties.zap === 'haut'){
+                zapLayerhaut = this.zap.create(x,y, 'zap')
+                zapLayerhaut.body.allowGravity = false;
+                zapLayerhaut.anims.play('zaphautanimation',true)
+            }
+            if (tile.properties.zap === 'bas'){
+                zapLayerbas = this.zap.create(x,y, 'zap')
+                zapLayerbas.body.allowGravity = false;
+                zapLayerbas.anims.play('zapbasanimation',true)
+            }
+        }
+        
+    });
+    //////lazer//////////
+
+    this.anims.create({
+        key: 'lazer',
+        frames: this.anims.generateFrameNumbers('lazer', { start: 0, end: 3 }),
+        frameRate: 8,
+        repeat: -1
+        
+    });
+
+    lazers = this.physics.add.group();
+
+    //Enemie////////////////////////
+    this.anims.create({
+        key: 'enemierun',
+        frames: this.anims.generateFrameNumbers('Enemie1', { start: 1, end: 3 }),
+        frameRate: 5,
+    });
+
+
+    enemieObjects = map.getObjectLayer('enemie').objects;
+    enemies = this.physics.add.group({
+         allowGravity: true
+     }); 
+
+    for (const enemie of enemieObjects) {
+    //enemies.create(enemie.x, enemie.y, 'Enemie1')
+    enemies.create(enemie.x, enemie.y, 'Enemie1')
+        .setOrigin(1,1)
+        .setDepth(1)
+        .setScale(1)
+        .setGravityY(300)
+}
+
+    
+    for (const enemie of enemies.children.entries) {
+        enemie.direction = 'RIGHT';
+        enemie.isDed = false;
+}  
+
+   
+    //animation perso principal  //////////////////////////
+    this.anims.create({
+        key: 'fixe',
+        frames: this.anims.generateFrameNumbers('Perso', { start: 8, end: 14 }),
+        frameRate: 5,
+    });
+    
+    this.anims.create({
+        key: 'jump',
+        frames: this.anims.generateFrameNumbers('Perso', { start: 5, end: 7 }),
+        frameRate: 12,
+    });
+
+    this.anims.create({
+        key: 'run',
+        frames: this.anims.generateFrameNumbers('Perso', { start: 16, end: 20 }),
+        frameRate: 12,
+        
+    });
+    
+    this.anims.create({
+        key: 'hit',
+        frames: this.anims.generateFrameNumbers('Perso', { start: 0, end: 4 }),
+        frameRate: 12,
+        
+    });
+    
+    /////////shoot//////////
+    this.anims.create({
+        key: 'shoot',
+        frames: this.anims.generateFrameNumbers('shoot', { start: 0, end: 2 }),
+        frameRate: 8,
+        repeat: -1
+        
+    });
+
+    shoots = this.physics.add.group();
+    
+ 
+
+    ////////collider/////////////////
+    this.physics.add.collider(player, wallsLayer);
+    this.physics.world.addCollider(player, enemies, hitplayer, null, this);
+    this.physics.add.collider(enemies, wallsLayer);
+    this.physics.add.overlap(enemies, shoots,hitenemies, null, this);
+    this.physics.add.collider(shoots, wallsLayer,hitwalls, null, this);
+    this.physics.add.collider(lazers, wallsLayer,hitwalls, null, this);
+    this.physics.add.overlap(player,lazers, deathplayer, null, this);
+    this.physics.add.overlap(player, bullet1,addmun, null, this);
+    this.physics.add.overlap(player, bullet2,addmun, null, this);
+    this.physics.add.overlap(player, bullet3,addmun, null, this);
+    this.physics.add.overlap(player, Moon,EndGame, null, this);
+
+
+
+    ////////// Inputs ////////////////
+
+    cursors = this.input.keyboard.createCursorKeys();
+    cursors2 = this.input.keyboard.addKeys('A,Z,S,Q,D,T,space');
+    
+}
+/////////////////////////////////////////////////////////////////////////////////
+  
+function update (time, delta)
+{
+
+    this.input.on('pointerdown', function (pointer) {
+        menu.destroy();
+    })
+
+
+    player.update();
+    onGround = player.body.blocked.down;
+
+
+    if (gameOver)
+    {
+        alarmeLayer.anims.play('alarmeanimation', false);
+        zapLayerhaut.anims.play('zaphautanimation', false);
+        zapLayerbas.anims.play('zapbasanimation', false);
+        return;
+    }
+
+    if(life === 3)
+    {
+    
+        Vie3 = this.add.image(60, 35,'Vie3') 
+            .setDepth(1)
+            .setScrollFactor(0);
+    }
+    if (life === 2){
+
+        Vie3.destroy();
+        
+        vie2=this.add.image(60, 35,'Vie2') 
+            .setDepth(1)
+            .setScrollFactor(0);
+    }
+    if(life === 1){
+        
+
+        Vie1=this.add.image(60, 35,'Vie1') 
+            .setDepth(1)
+            .setScrollFactor(0);
+    }
+
+    
+    this.add.text(16, 57, "Munitions: " + bullets, {font: "18px monospace",fill: "#000000",padding: { x: 20, y: 10 },backgroundColor: "#ffffff"})
+      .setDepth(1)
+      .setScrollFactor(0);
+
+    
+    
+    //enemy//////////
+    for (const enemie of enemies.children.entries) {
+        if (enemie.body.blocked.right) {
+            enemie.direction = 'LEFT';
+        }
+
+        if (enemie.body.blocked.left) {
+            enemie.direction = 'RIGHT';
+        }
+
+        if (enemie.direction === 'RIGHT') {
+            enemie.setVelocityX(100);
+            enemie.setFlipX(false);
+            enemie.anims.play("enemierun", true);
+        } else {
+            enemie.setVelocityX(-100);
+            enemie.setFlipX(true);
+            enemie.anims.play("enemierun", true);
+        }
+       
+    }
+    
+    this.input.gamepad.once('connected', function (pad) {
+    //   'pad' is a reference to the gamepad that was just connected
+        paddle = pad;
+        padConnected = true;
+    });
+
+    zapcompt-- ;
+  
+
+    if (zapcompt == 0 )
+    {   
+        //lazerhaut = lazers.create(zapLayerhaut.x,zapLayerhaut.y,'lazer');
+
+        zapaleatoire = Math.floor(Math.random() * Math.floor(11));
+
+        lazerhaut = lazers.create(10000,10000,'lazer');
+        lazerbas = lazers.create(10000,10000,'lazer');
+
+        if(zapaleatoire == 0)   { lazerhaut = lazers.create(456,152,'lazer');lazerbas = lazers.create(1049,391,'lazer');}
+        if(zapaleatoire == 1)   { lazerhaut = lazers.create(1064,152,'lazer');lazerbas = lazers.create(1083,391,'lazer');}
+        if(zapaleatoire == 2)   { lazerhaut = lazers.create(1112,152,'lazer');lazerbas = lazers.create(232,660,'lazer');}
+        if(zapaleatoire == 3)   { lazerhaut = lazers.create(1128,152,'lazer');lazerbas = lazers.create(855,680,'lazer');}
+        if(zapaleatoire == 4)   { lazerhaut = lazers.create(344,442,'lazer');lazerbas = lazers.create(960,682,'lazer');}
+        if(zapaleatoire == 5)   { lazerhaut = lazers.create(569,442,'lazer');lazerbas = lazers.create(1030,680,'lazer');}
+        if(zapaleatoire == 6)   { lazerhaut = lazers.create(840,442,'lazer');lazerbas = lazers.create(903,972,'lazer');}
+        if(zapaleatoire == 7)   {lazerhaut = lazers.create(866,442,'lazer');}
+        if(zapaleatoire == 8)   {lazerhaut = lazers.create(1349,458,'lazer');}
+        if(zapaleatoire == 9)   {lazerhaut = lazers.create(1496,443,'lazer');}
+        if(zapaleatoire == 10)  {lazerhaut = lazers.create(1334,728,'lazer');}
+        if(zapaleatoire == 11)  {lazerhaut = lazers.create(921,728,'lazer');}
+
+        lazerhaut.body.allowGravity = false;
+        lazerhaut.allowGravity = false;
+        lazerhaut.anims.play("lazer", true);
+        lazerhaut.setVelocityY(300);
+
+        lazerbas.body.allowGravity = false;
+        lazerbas.allowGravity = false;
+        lazerbas.anims.play("lazer", true);
+        lazerbas.setVelocityY(-300);
+            
+        zapcompt = 30;
+    }
+
+
+
+
+    ////////Invincibilité///////////////////////////
+    if(invincible == true){
+        compteur-- ;
+        if(compteur == 0){
+            compteur = 60;
+            player.setTint(0xffffff);
+            invincible = false ;
+        }
+    }
+
+    const acceleration = onGround ? 500 : 300;
+
+    if (cursors2.Q.isDown || cursors.left.isDown) {
+        player.setAccelerationX(-acceleration);
+        player.setFlipX(true);
+        directionbody = true;
+    } 
+    else if (cursors2.D.isDown || cursors.right.isDown) {
+      player.setAccelerationX(acceleration);
+      player.setFlipX(false);
+      directionbody = false;
+
+    } 
+    else {
+      player.setAccelerationX(0);
+    }
+
+    const JustDownA = Phaser.Input.Keyboard.JustDown(cursors2.A)       
+    
+    if (JustDownA && bullets >0 )
+    {
+        shoot = shoots.create(player.x,player.y,'shoot');
+        shoot.body.allowGravity = false;
+        shoot.allowGravity = false;
+        shoot.anims.play("shoot", true);
+        bullets-- ;
+
+        if(directionbody === false){
+            shoot.setVelocityX(550);
+            shoot.setFlipX(false);
+        }
+        else{
+            shoot.setVelocityX(-550);
+            shoot.setFlipX(true);
+        }
+       
+    }
+
+    if (cursors2.S.isDown || cursors.down.isDown)
+    {
+        player.setVelocityY(300);
+    }
+    
+    const isJumpJustDownup = Phaser.Input.Keyboard.JustDown(cursors.up)
+    const isJumpJustDownspace = Phaser.Input.Keyboard.JustDown(cursors2.space)                                              
+    
+    if ((isJumpJustDownspace || isJumpJustDownup) && (onGround || (jumpCount >0 && jumpCount < 2)))
+    {
+        player.setVelocityY(-250);
+        jumpCount++
+        particulejet.active=true
+        particulejet.setPosition(player.x,player.y)
+        particulejet.explode()
+    }
+    if (onGround && !isJumpJustDownspace && !isJumpJustDownup ){
+        jumpCount = 0
+    }
+
+    
+   if(padConnected){
+       
+        if (paddle.left)
+        {
+            player.setVelocityX(-200);
+            player.setFlipX(true);
+            directionbody = true;
+        }
+        else if (paddle.right)
+        {
+            player.setVelocityX(200);
+            player.setFlipX(false);
+            directionbody = false;
+        }
+        else
+        {
+            player.setVelocityX(0);
+
+        }
+
+        if (paddle.Justdown)
+        {
+            player.setVelocityY(200);
+        }
+       
+        if (paddle.A && (onGround || jumpCount < 2) )
+        {
+            player.setVelocityY(-300);
+            ++jumpCount
+            
+        }
+        if (paddle.Y )
+        {
+            shoot = shoots.create(player.x,player.y,'shoot');
+            shoot.body.allowGravity = false;
+            shoot.allowGravity = false;
+            shoot.anims.play("shoot", true);
+
+            if(directionbody === false){
+                shoot.setVelocityX(550);
+                shoot.setFlipX(false);
+            }
+            else{
+                shoot.setVelocityX(-550);
+                shoot.setFlipX(true);
+            }
+        } 
+    }
+   
+
+    if (onGround) {
+      if (player.body.velocity.x !== 0) player.anims.play("run", true);
+      else player.anims.play("fixe", true);
+    } else {
+      player.anims.play("jump", true);
+    }
+    
+    if (life === 0){
+            
+            Vie0 = this.add.image(60, 35,'Vie0') 
+            .setDepth(1)
+            .setScrollFactor(0);
+
+            this.physics.pause();
+            player.setTint(0xff0000);
+            this.add
+                .text(500, 400, "Game Over", {
+                font: "18px monospace",
+                fill: "#000000",
+                padding: { x: 50, y: 25 },
+                backgroundColor: "#ffffff"
+                })
+            .setDepth(1)
+            .setScrollFactor(0);
+
+            gameOver = true;
+        }
+    
+}    
+function hitplayer ()
+{
+     if (invincible === false)
+    {
+        invincible = true;
+        life--;
+        player.setTint(0xff0000);
+    }
+}
+function deathplayer ()
+{
+    life = 1 ;
+    hitplayer ();
+
+}
+function hitenemies (enemies,shoot)
+{   
+    enemies.destroy();
+    shoot.destroy();
+}
+function hitwalls (shoot,wallsLayer)
+{   
+    shoot.destroy();
+}
+function addmun (player,bullet)
+{
+    bullet.destroy();
+    bullets=bullets+8
+}
+function EndGame (Player,Moon){
+    
+
+    alarmeLayer.anims.play('alarmeanimation', false);
+    zapLayerhaut.anims.play('zaphautanimation', false);
+    zapLayerbas.anims.play('zapbasanimation', false);
+
+    this.add.text(500, 400, "You win", { font: "18px monospace",fill: "#000000",padding: { x: 50, y: 25 },backgroundColor: "#ffffff"})
+    .setDepth(1)
+    .setScrollFactor(0);
+
+
+    this.physics.pause();
+    gameOver = true ;
+
+}
+
+</script>
+
+</body>
+</html>
