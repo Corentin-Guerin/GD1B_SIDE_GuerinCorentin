@@ -3,11 +3,12 @@
 <head> 
     <meta charset="UTF-8" />
     <title>Moon Conquest</title>
-    <script type = "text/javascript" src="phaser.min.js"></script>
-    
+    <script type = "text/javascript" src="phaser.min.js"></script> 
     <style type="text/css">
         body {
-            margin: 0;
+            overflow: hidden;
+            margin:0 ;
+            padding: 0;
         }
     </style>
 </head>
@@ -152,7 +153,7 @@ function create ()
     
     
     this.cameras.main.startFollow(player);
-    this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+    this.cameras.main.setBounds(0, 0, player.widthInPixels, player.heightInPixels);
   
     //text/////////
     this.add.text(140, 1025, "  Utilise les \nFleches & Espace \npour te deplacer. ", {
